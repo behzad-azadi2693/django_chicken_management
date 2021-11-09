@@ -1,0 +1,5 @@
+sbenv/
+*sqlite3
+__pycache__
+000*
+.git
