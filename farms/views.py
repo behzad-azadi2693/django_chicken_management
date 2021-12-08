@@ -16,7 +16,7 @@ from django.db.models import Sum
 # Create your views here.
 
 def farms(request):
-    farms = Farms.objects.all().only('pk','image','name_type','active','date_start').order_by('-id')
+    farms = Farms.objects.all().only('pk','image','name_type','active','date_start').order_by('-active','-id')
     
     context = {
         'farms':farms
@@ -37,6 +37,7 @@ def farm(request, pk):
 
 def create_farm(request):
     form = FarmForm()
+
     if request.method == 'POST':
         form = FarmForm(request.POST, request.FILES)
         if form.is_valid():
@@ -54,6 +55,10 @@ def create_farm(request):
 
 def edit_farm(request, pk):
     obj = get_object_or_404(Farms, pk=pk)
+
+    if not obj.active:
+        messages.warning(request, 'این مزرعه فعال نمی باشد', 'warning')
+        return redirect('farms:farm', obj.pk)
 
     if request.method == 'POST':
         form = FarmForm(request.POST, request.FILES, instance=obj)
@@ -74,16 +79,22 @@ def edit_farm(request, pk):
 
 def profilechicken(request, pk):
     obj = get_object_or_404(Farms, pk=pk)
-    profile = get_object_or_404(ProfileChickens, which_farm=obj)
+    profile = ProfileChickens.objects.filter(which_farm=obj).first()
+
     context = {
         'profile':profile
     }
+
     return render(request, 'medicians.html', context)
 
 def create_profilechicken(request, pk):
     obj = get_object_or_404(Farms, pk=pk)
 
     check = ProfileChickens.objects.filter(which_farm=obj).first()
+
+    if not obj.active:
+        messages.warning(request, 'این مزرعه فعال نمی باشد', 'warning')
+        return redirect('farms:farm', obj.pk)
 
     if check is not None:
         messages.error(request, 'این مزرعه زیر کشت می باشد', 'error')
@@ -109,7 +120,11 @@ def create_profilechicken(request, pk):
 
 def edit_profilechicken(request, pk):
     obj = get_object_or_404(ProfileChickens, pk=pk)
-
+    
+    if not obj.which_farm.active:
+        messages.warning(request, 'این مزرعه فعال نمی باشد', 'warning')
+        return redirect('farms:profilechicken', obj.which_farm.pk)
+    
     if request.method == 'POST':
         form = ProfilechickenForm(request.POST, instance=obj)
         if form.is_valid():
@@ -140,6 +155,11 @@ def vaccinations(request, pk):
 
 def create_vaccination(request, pk):
     obj = get_object_or_404(Farms, pk=pk)
+
+    if not obj.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', obj.pk)
+
     if request.method == 'POST':
         form = VaccinationForm(request.POST)
         if form.is_valid():
@@ -159,6 +179,9 @@ def create_vaccination(request, pk):
 
 def edit_vaccination(request, pk):
     obj = get_object_or_404(Vaccination, pk=pk)
+    if not obj.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:vaccinations', obj.which_farm.pk)
 
     if request.method == 'POST':
         form = VaccinationForm(request.POST, instance=obj)
@@ -177,169 +200,27 @@ def edit_vaccination(request, pk):
         form = VaccinationForm(instance=obj)
         return render(request, 'create.html',{'form':form})
 
-def manufacturing_farm(request, pk):
-    obj = get_object_or_404(Farms, pk=pk)
-    manu = obj.farm_manufacturing.all()
-
-    sum_broken = manu.aggregate(Sum('broken'))
-    sum_normal = manu.aggregate(Sum('normal'))
-    sum_eggyolk = manu.aggregate(Sum('egg_yolk'))
-
-    context = {
-        'broken' :sum_broken,
-        'normal' :sum_normal,
-        'eggyolk':sum_eggyolk,
-    }
-    return render(request, 'manufacturing_farm.html', context)
-
-def manufacturing(request, pk):
-    obj = get_object_or_404(Manufacturing, pk=pk)
-
-    context = {
-        'obj':obj
-    }
-
-    return render(request, 'manifacturing.html', context)
-
-def create_manufacturing(request, pk):
-    obj = get_object_or_404(Farms, pk=pk)
-
-    if request.method == 'POST':
-        form = ManufacturingForm(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-            obj = form.save()
-            return redirect('farms:manufacturing', obj.pk)
-        else:
-            form = ManufacturingForm(request.POST)
-            context = {
-                'form':form
-            }
-            return render(request, 'create.html', context)
-    else:
-        data = {'which_farm': obj}
-        form = ManufacturingForm(initial=data)
-        return render(request, 'create.html',{'form':form})
-
-def edit_manufacturing(request, pk):
-    obj = get_object_or_404(Manufacturing, pk=pk)
-
-    if request.method == 'POST':
-        form = ManufacturingForm(request.POST, instance=obj)
-        if form.is_valid():
-            cd = form.cleaned_data
-            obj = form.save()
-            return redirect('farms:manufacturing', obj.pk)
-        else:
-            form = ManufacturingForm(request.POST)
-            context = {
-                'form':form
-            }
-            return render(request, 'create.html', context)
-
-    else:
-        form = ManufacturingForm(instance=obj)
-        return render(request, 'create.html',{'form':form})
 
 
-def losses(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
 
-    all_losses = Losses.objects.values('pk', 'data')
 
-    context = {
-        'all_losses':all_losses
-    }
 
-    return render(request, 'losses.html', context)
 
-def losse(request, pk):
-    losse = get_object_or_404(Losses, pk=pk)
 
-    context = {
-        'losse':losse
-    }
-    return render(request, 'losse.html', context)
 
-def create_losse(request, pk):
-    obj = get_object_or_404(Farms, pk=pk)
 
-    if request.method == 'POST':
-        form = LossesForm(request.POST)
 
-        if form.is_valid():
-            cd = form.cleaned_data
-            obj = form.save()
-            return redirect('farms:losse', obj.pk)
-        else:
-            form = LossesForm(request.POST)
-            return render(request, 'create.html', {'form':form})
-    else:
-        data = {'which_farm': obj}
-        form = LossesForm(initial=data)
-        return render(request, 'create.html', {'form':form})
 
-def edit_losse(request, pk):
-    obj = get_object_or_404(Losses, pk=pk)
 
-    if request.method == 'POST':
-        form = LossesForm(request.POST, instance=obj)
 
-        if form.is_valid():
-            cd = form.cleaned_data
-            obj = form.save()
-            return redirect('farms:losse', obj.pk)
-        else:
-            form = LossesForm(request.POST)
-            return render(request, 'create.html', {'form':form})
-    else:
-        form = LossesForm(instance=obj)
-        return render(request, 'create.html', {'form':form})
 
-def incaomes(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
 
-    incaomes = Incaome.objects.filter(which_farm =farm)
 
-    context = {
-        'incaomes':incaomes
-    }
-    return render(request, 'incaomes.html', context)
 
-def create_incaome(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
 
-    if request.method == 'POST':
-        form = IncaomForm(request.POST)
 
-        if form.is_valid():
-            cd = form.cleaned_data
-            form.save()
-            return redirect('farms:incomes', farm.pk)
-        else:
-            form = IncaomForm(request.POST)
-            return render(request, 'create.html', {'form':form})
-    else:
-        data = {'which_farm': farm}
-        form = IncaomForm(initial=data)
-        return render(request, 'create.html', {'form':form})
 
-def edit_incaome(request, pk):
-    obj = get_object_or_404(Incaome, pk=pk)
 
-    if request.method == 'POST':
-        form = IncaomForm(request.POST, instance=obj)
-
-        if form.is_valid():
-            cd = form.cleaned_data
-            obj = form.save()
-            pk = obj.which_farm.pk
-            return redirect('farms:incaomes', pk)
-        else:
-            return render(request, 'create.html', {'form':form})
-    else:
-        form = IncaomForm(instance=obj)
-        return render(request, 'create.html', {'form':form})
 
 
 def functions(request, pk):
@@ -355,6 +236,10 @@ def functions(request, pk):
 
 def create_function(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
+
+    if not farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', farm.pk)
 
     if request.method == 'POST':
         form = FunctionForm(request.POST)
@@ -373,6 +258,10 @@ def create_function(request, pk):
 
 def edit_function(request, pk):
     farm = get_object_or_404(Function, pk=pk)
+
+    if not farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', farm.pk)
 
     if request.method == 'POST':
         form = FunctionForm(request.POST, instance=farm)
@@ -403,6 +292,10 @@ def schedules(request, pk):
 def create_schedule(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
 
+    if not farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', farm.pk)
+
     if request.method == 'POST':
         form = ScheduleForm(request.POST)
 
@@ -421,6 +314,10 @@ def create_schedule(request, pk):
 def edit_schedule(request, pk):
     obj = get_object_or_404(Schedule, pk=pk)
 
+    if not obj.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', obj.pk)
+
     if request.method == 'POST':
         form = ScheduleForm(request.POST, instance=obj)
 
@@ -437,6 +334,11 @@ def edit_schedule(request, pk):
 
 def edit_manage(request, pk):
     user = get_object_or_404(FarmManage, pk=pk)
+
+    if not user.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', user.which_farm.pk)
+
     if request.method == 'POST':
         form = ManagerForm(request.POST, instance=user)
         if form.is_valid():
@@ -453,7 +355,11 @@ def edit_manage(request, pk):
 def create_manage(request, pk):    
     farm = get_object_or_404(Farms, pk=pk)
     manageformset = modelformset_factory(FarmManage, ManagerForm, fields=('__all__'), extra=3)
-    
+
+    if not farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', farm.pk)
+
     if request.method == 'POST':
         formset = manageformset(data=request.POST)
         formset.save()
@@ -477,6 +383,11 @@ def make_bery(request, pk):
 
 def create_make_bery(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
+
+    if not farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', farm.pk)
+
     if request.method == 'POST':
         form = MakeBeryForm(request.POST)
         if form.is_valid():
@@ -492,6 +403,10 @@ def create_make_bery(request, pk):
 
 def edit_make_bery(request, pk):
     obj = get_object_or_404(MakBery, pk=pk)
+
+    if not obj.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', obj.pk)
 
     if request.method == 'POST':
         form = MakeBeryForm(request.POST, instance=obj)
@@ -518,6 +433,10 @@ def medicians(request, pk):
 def create_medician(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
 
+    if not farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', farm.pk)
+
     if request.method == 'POST':
         form = MedicianForm(request.POST)
         if form.is_valid():
@@ -535,6 +454,10 @@ def create_medician(request, pk):
 def edit_medician(request, pk):
     obj = get_object_or_404(Medician, pk=pk)
 
+    if not obj.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:medicians', obj.which_farm.pk)
+
     if request.method == 'POST':
         form = MedicianForm(request.POST, instance=obj)
         if form.is_valid():
@@ -551,6 +474,10 @@ def edit_medician(request, pk):
 
 def add_image_to_medician(request, pk):
     mdc = get_object_or_404(Medician, pk=pk)
+
+    if not mdc.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:medicians', mdc.which_farm.pk)
 
     if request.method == 'POST':
         form = ImageMedicianForm(request.POST, request.FILES)
@@ -573,6 +500,11 @@ def all_image_medician(request, pk):
 
 def remove_image_medician(request, pk):
     img = get_object_or_404(ImageMedician, pk=pk)
+
+    if not img.which_medician.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:all_image_medician', img.which_medician.pk)
+
     pk = img.which_medician.pk
     img.delete()
     return redirect('farms:all_image_medician', pk)
@@ -591,6 +523,10 @@ def labratores(request, pk):
 def create_labratore(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
 
+    if not farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', farm.pk)
+
     if request.method == 'POST':
         form = LabratoreForm(request.POST)
         if form.is_valid():
@@ -608,6 +544,10 @@ def create_labratore(request, pk):
 def edit_labratore(request, pk):
     obj = get_object_or_404(labratore, pk=pk)
 
+    if not obj.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:labratores', obj.which_farm.pk)
+
     if request.method == 'POST':
         form = LabratoreForm(request.POST, instance=obj)
         if form.is_valid():
@@ -624,6 +564,10 @@ def edit_labratore(request, pk):
 
 def add_image_to_labratore(request, pk):
     lab = get_object_or_404(labratore, pk=pk)
+
+    if not lab.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:labratores', lab.which_farm.pk)
 
     if request.method == 'POST':
         form = ImageLabratoreForm(request.POST, request.FILES)
@@ -646,6 +590,214 @@ def all_image_labratore(request, pk):
 
 def remove_image_labratore(request, pk):
     img = get_object_or_404(ImageLabratore, pk=pk)
+
+    if not img.labratore.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:all_image_labratore', img.labratore.pk)
+
     pk = img.labratore.pk
     img.delete()
     return redirect('farms:all_image_labratore', pk)
+
+def manufacturing_farm(request, pk):
+    obj = get_object_or_404(Farms, pk=pk)
+    manu = obj.farm_manufacturing.all()
+
+    sum_broken = manu.aggregate(Sum('Broken'))
+    sum_normal = manu.aggregate(Sum('normal'))
+    sum_eggyolk = manu.aggregate(Sum('eggـyolk'))
+
+    context = {
+        'broken' :sum_broken['Broken__sum'],
+        'normal' :sum_normal['normal__sum'],
+        'eggyolk':sum_eggyolk['eggـyolk__sum'],
+        'manu': manu
+    }
+
+    return render(request, 'manufacturing_farm.html', context)
+
+def create_manufacturing(request, pk):
+    obj = get_object_or_404(Farms, pk=pk)
+
+    if not obj.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', obj.pk)
+
+    if request.method == 'POST':
+        form = ManufacturingForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            obj = form.save()
+            return redirect('farms:manufacturing_farm', obj.which_farm.pk)
+        else:
+            form = ManufacturingForm(request.POST)
+            context = {
+                'form':form
+            }
+            return render(request, 'create.html', context)
+    else:
+        data = {'which_farm': obj}
+        form = ManufacturingForm(initial=data)
+        return render(request, 'create.html',{'form':form})
+
+def edit_manufacturing(request, pk):
+    obj = get_object_or_404(Manufacturing, pk=pk)
+
+    if not obj.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', obj.pk)
+
+    if request.method == 'POST':
+        form = ManufacturingForm(request.POST, instance=obj)
+        if form.is_valid():
+            cd = form.cleaned_data
+            obj = form.save()
+            return redirect('farms:manufacturing_farm', obj.which_farm.pk)
+        else:
+            form = ManufacturingForm(request.POST)
+            context = {
+                'form':form
+            }
+            return render(request, 'create.html', context)
+
+    else:
+        form = ManufacturingForm(instance=obj)
+        return render(request, 'create.html',{'form':form})
+
+def losses(request, pk):
+    farm = get_object_or_404(Farms, pk=pk)
+
+    all_losses = Losses.objects.filter(which_farm=farm)
+    
+    sum_hit_back = all_losses.aggregate(Sum('hit_back'))
+    sum_sickness = all_losses.aggregate(Sum('sickness'))
+    sum_suffocation = all_losses.aggregate(Sum('suffocation'))
+    sum_physics = all_losses.aggregate(Sum('physics'))
+
+    context = {
+        'hit_back' :sum_hit_back['hit_back__sum'],
+        'sickness' :sum_sickness['sickness__sum'],
+        'suffocation':sum_suffocation['suffocation__sum'],
+        'physics':sum_physics['physics__sum'],
+        'losses':all_losses,
+    }
+    print(context)
+
+    return render(request, 'losse.html', context)
+
+def losse(request, pk):
+    losse = get_object_or_404(Losses ,pk=pk)
+
+    context = {
+        'losse':losse
+    }
+    return render(request, 'losse.html', context)
+
+def create_losse(request, pk):
+    obj = get_object_or_404(Farms, pk=pk)
+
+    if not obj.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', obj.pk)
+
+    if request.method == 'POST':
+        form = LossesForm(request.POST)
+
+        if form.is_valid():
+            cd = form.cleaned_data
+            obj = form.save()
+            return redirect('farms:losse', obj.pk)
+        else:
+            form = LossesForm(request.POST)
+            return render(request, 'create.html', {'form':form})
+    else:
+        data = {'which_farm': obj}
+        form = LossesForm(initial=data)
+        return render(request, 'create.html', {'form':form})
+
+def edit_losse(request, pk):
+    obj = get_object_or_404(Losses, pk=pk)
+
+    if not obj.which_farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:losse', obj.pk)
+
+    if request.method == 'POST':
+        form = LossesForm(request.POST, instance=obj)
+
+        if form.is_valid():
+            cd = form.cleaned_data
+            obj = form.save()
+            return redirect('farms:losse', obj.pk)
+        else:
+            form = LossesForm(request.POST)
+            return render(request, 'create.html', {'form':form})
+    else:
+        form = LossesForm(instance=obj)
+        return render(request, 'create.html', {'form':form})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def incaomes(request, pk):
+    farm = get_object_or_404(Farms, pk=pk)
+
+    incaomes = Incaome.objects.filter(which_farm =farm)
+
+    context = {
+        'incaomes':incaomes
+    }
+    return render(request, 'incaomes.html', context)
+
+def create_incaome(request, pk):
+    farm = get_object_or_404(Farms, pk=pk)
+
+    if not farm.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', farm.pk)
+
+    if request.method == 'POST':
+        form = IncaomForm(request.POST)
+
+        if form.is_valid():
+            cd = form.cleaned_data
+            form.save()
+            return redirect('farms:incomes', farm.pk)
+        else:
+            form = IncaomForm(request.POST)
+            return render(request, 'create.html', {'form':form})
+    else:
+        data = {'which_farm': farm}
+        form = IncaomForm(initial=data)
+        return render(request, 'create.html', {'form':form})
+
+def edit_incaome(request, pk):
+    obj = get_object_or_404(Incaome, pk=pk)
+
+    if not obj.active:
+        messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
+        return redirect('farms:farm', obj.pk)
+
+    if request.method == 'POST':
+        form = IncaomForm(request.POST, instance=obj)
+
+        if form.is_valid():
+            cd = form.cleaned_data
+            obj = form.save()
+            pk = obj.which_farm.pk
+            return redirect('farms:incaomes', pk)
+        else:
+            return render(request, 'create.html', {'form':form})
+    else:
+        form = IncaomForm(instance=obj)
+        return render(request, 'create.html', {'form':form})
