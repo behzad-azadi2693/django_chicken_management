@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.forms.models import modelformset_factory
 
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import (
@@ -13,9 +14,24 @@ from .forms import (
         )
 from django.db.models import Sum
 # Create your views here.
+from django.db import connection, reset_queries
+import time
 
+def debugger(func):
+    def wrapper(*args, **kwargs):
+        reset_queries()
+        st=time.time()
+        value = func(*args, **kwargs)
+        et=time.time()
+
+        queries = len(connection.queries)
+        print(f"'--------------------------------------',{queries} ,' ----time:',{et-st}")
+        return value
+    return wrapper
+
+@debugger
 def farms(request):
-    farmses = Farms.objects.all().only('pk','image','name_type','active','date_start').order_by('-active','-id')
+    farmses = Farms.objects.only('pk','image','name_type','active','date_start').order_by('-active','-id')
     paginator = Paginator(farmses, 24) 
     page = request.GET.get('page')
     farms = paginator.get_page(page)
@@ -25,20 +41,20 @@ def farms(request):
 
     return render(request, 'farms.html', context)
 
-
+@debugger
 def farm(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
-    manage = FarmManage.objects.filter(which_farm=farm)
+    manage = farm.farms_farmmanage.all()
+
     context = {
         'farm':farm,
         'manage':manage
     }
+    
     return render(request, 'farm.html', context)
 
-
+@debugger
 def create_farm(request):
-    form = FarmForm()
-
     if request.method == 'POST':
         form = FarmForm(request.POST, request.FILES)
         if form.is_valid():
@@ -52,17 +68,19 @@ def create_farm(request):
             }
             return render(request, 'create.html', context)
     else:
+        form = FarmForm()
         return render(request, 'create.html',{'form':form})
 
+@debugger
 def edit_farm(request, pk):
-    obj = get_object_or_404(Farms, pk=pk)
+    farm = get_object_or_404(Farms, pk=pk)
 
-    if not obj.active:
+    if not farm.active:
         messages.warning(request, 'این مزرعه فعال نمی باشد', 'warning')
-        return redirect('farms:farm', obj.pk)
+        return redirect('farms:farm', pk)
 
     if request.method == 'POST':
-        form = FarmForm(request.POST, request.FILES, instance=obj)
+        form = FarmForm(request.POST, request.FILES, instance=farm)
         if form.is_valid():
             cd = form.cleaned_data
             obj = form.save()
@@ -74,58 +92,59 @@ def edit_farm(request, pk):
             }
             return render(request, 'create.html', context)
     else:
-        form = FarmForm(instance=obj)
+        form = FarmForm(instance=farm)
         return render(request, 'create.html',{'form':form})
 
-
+@debugger
 def profilechicken(request, pk):
-    obj = get_object_or_404(Farms, pk=pk)
-    profile = ProfileChickens.objects.filter(which_farm=obj).first()
+    profile = ProfileChickens.objects.select_related('which_farm').filter(which_farm__pk=pk).first()
 
     context = {
         'profile':profile
     }
 
-    return render(request, 'medicians.html', context)
+    return render(request, 'medicians.html', {'profile':profile})
 
+@debugger
 def create_profilechicken(request, pk):
-    obj = get_object_or_404(Farms, pk=pk)
-
-    check = ProfileChickens.objects.filter(which_farm=obj).first()
-
-    if not obj.active:
-        messages.warning(request, 'این مزرعه فعال نمی باشد', 'warning')
-        return redirect('farms:farm', obj.pk)
-
-    if check is not None:
+    try:
+        ProfileChickens.objects.get(which_farm__pk=pk)
         messages.error(request, 'این مزرعه زیر کشت می باشد', 'error')
-        return redirect('farms:farm', obj.pk)
+        return redirect('farms:farm', pk)
 
-    if request.method == 'POST':
-        form = ProfilechickenForm(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-            obj = form.save()
-            return redirect('farms:profilechicken', obj.pk)
-        else:
+    except ProfileChickens.DoesNotExist:
+        farm = get_object_or_404(Farms, pk=pk)
+    
+        if not farm.active:
+            messages.warning(request, 'این مزرعه فعال نمی باشد', 'warning')
+            return redirect('farms:farm', farm.pk)
+
+        if request.method == 'POST':
             form = ProfilechickenForm(request.POST)
-            context = {
-                'form':form
-            }
-            return render(request, 'create.html', context)
-    else:
-            data = {'which_farm':obj}
+            if form.is_valid():
+                cd = form.cleaned_data
+                obj = form.save()
+                return redirect('farms:profilechicken', obj.pk)
+            else:
+                form = ProfilechickenForm(request.POST)
+                context = {
+                    'form':form
+                }
+                return render(request, 'create.html', context)
+        else:
+
+            data = {'which_farm':farm}
             form = ProfilechickenForm(initial=data)
             return render(request, 'create.html',{'form':form})
-
-
+    
+@debugger
 def edit_profilechicken(request, pk):
-    obj = get_object_or_404(ProfileChickens, pk=pk)
+    farm = get_object_or_404(ProfileChickens, pk=pk)
     
-    if not obj.which_farm.active:
+    if not farm.which_farm.active:
         messages.warning(request, 'این مزرعه فعال نمی باشد', 'warning')
-        return redirect('farms:profilechicken', obj.which_farm.pk)
-    
+        return redirect('farms:profilechicken', farm.which_farm.pk)
+
     if request.method == 'POST':
         form = ProfilechickenForm(request.POST, instance=obj)
         if form.is_valid():
@@ -140,13 +159,13 @@ def edit_profilechicken(request, pk):
             return render(request, 'create.html', context)
 
     else:
-        form = ProfilechickenForm(instance=obj)
+
+        form = ProfilechickenForm(instance=farm)
         return render(request, 'create.html',{'form':form})   
 
+@debugger
 def vaccinations(request, pk):
-    obj = get_object_or_404(Farms, pk=pk)
-
-    queries = obj.farm_vaccination.all()
+    queries = Vaccination.objects.select_related('which_farm').filter(which_farm__pk=pk)
 
     context = {
         'vaccinations':queries
@@ -154,6 +173,7 @@ def vaccinations(request, pk):
 
     return render(request, 'medicians.html', context)
 
+@debugger
 def create_vaccination(request, pk):
     obj = get_object_or_404(Farms, pk=pk)
 
@@ -179,11 +199,12 @@ def create_vaccination(request, pk):
         return render(request, 'create.html',{'form':form})
 
 def edit_vaccination(request, pk):
+
     obj = get_object_or_404(Vaccination, pk=pk)
     if not obj.which_farm.active:
         messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
         return redirect('farms:vaccinations', obj.which_farm.pk)
-
+    
     if request.method == 'POST':
         form = VaccinationForm(request.POST, instance=obj)
         if form.is_valid():
@@ -198,37 +219,14 @@ def edit_vaccination(request, pk):
             return render(request, 'create.html', context)
 
     else:
+
         form = VaccinationForm(instance=obj)
         return render(request, 'create.html',{'form':form})
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+@debugger
 def functions(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
-
-    functions = Function.objects.filter(which_farm=farm)
-
+    functions = Function.objects.select_related('which_farm').filter(which_farm__pk=pk)
     context = {
         'functions': functions
     }
@@ -242,13 +240,14 @@ def create_function(request, pk):
         messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
         return redirect('farms:farm', farm.pk)
 
+
     if request.method == 'POST':
         form = FunctionForm(request.POST)
 
         if form.is_valid():
             cd = form.cleaned_data
             form.save()
-            return redirect('farms:functions', farm.pk)
+            return redirect('farms:functions', pk)
         else:
             form = FunctionForm(request.POST)
             return render(request, 'create.html', {'form':form})
@@ -280,15 +279,14 @@ def edit_function(request, pk):
 
 
 def schedules(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
-
-    schedules = Schedule.objects.filter(which_farm=farm)
+    schedules = Schedule.objects.select_related('which_farm').filter(which_farm__pk=pk)
 
     context = {
         'schedules': schedules
     }
 
     return render(request, 'medicians.html', context)
+
 
 def create_schedule(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
@@ -308,13 +306,13 @@ def create_schedule(request, pk):
             form = ScheduleForm(request.POST)
             return render(request, 'create.html', {'form':form})
     else:
+        
         data = {'which_farm': farm}
         form = ScheduleForm(initial=data)
         return render(request, 'create.html', {'form':form})
 
 def edit_schedule(request, pk):
     obj = get_object_or_404(Schedule, pk=pk)
-
     if not obj.active:
         messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
         return redirect('farms:farm', obj.pk)
@@ -353,8 +351,10 @@ def edit_manage(request, pk):
         form = ManagerForm(instance=user)
         return render(request, 'create.html', {'form':form})
 
+
 def create_manage(request, pk):    
     farm = get_object_or_404(Farms, pk=pk)
+
     manageformset = modelformset_factory(FarmManage, ManagerForm, fields=('__all__'), extra=3)
 
     if not farm.active:
@@ -364,9 +364,10 @@ def create_manage(request, pk):
     if request.method == 'POST':
         formset = manageformset(data=request.POST)
         formset.save()
-        return redirect('farms:farm', farm.pk)
+        return redirect('farms:farm', pk)
 
     else:
+        
         form = manageformset(queryset=FarmManage.objects.none(), initial=[
             {'which_farm':farm},
             {'which_farm':farm},
@@ -378,8 +379,7 @@ def create_manage(request, pk):
         return render(request, 'create.html', context)
 
 def make_bery(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
-    all_mak_bery = MakBery.objects.filter(which_farm=farm)
+    all_mak_bery = MakBery.objects.select_related('which_farm').filter(which_farm__pk=pk)
     return render(request, 'medicians.html', {'all_mak_bery':all_mak_bery})
 
 def create_make_bery(request, pk):
@@ -398,16 +398,18 @@ def create_make_bery(request, pk):
         else:
             return render(request, 'create.html', {'form':form})
     else:
+        
         data = {'which_farm':farm}
         form = MakeBeryForm(initial=data)
         return render(request, 'create.html', {'form':form})
 
 def edit_make_bery(request, pk):
     obj = get_object_or_404(MakBery, pk=pk)
-
+    
     if not obj.active:
         messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
         return redirect('farms:farm', obj.pk)
+
 
     if request.method == 'POST':
         form = MakeBeryForm(request.POST, instance=obj)
@@ -420,11 +422,9 @@ def edit_make_bery(request, pk):
     else:
         form = MakeBeryForm(instance=obj)
         return render(request, 'create.html', {'form':form})
-
+@debugger
 def medicians(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
-    all_medician = Medician.objects.filter(which_farm=farm).order_by('-date')
-    print(all_medician)
+    all_medician = Medician.objects.select_related('which_farm').filter(which_farm__pk=pk).order_by('-date')
     context = {
         'all_medician':all_medician,
     }
@@ -493,10 +493,9 @@ def add_image_to_medician(request, pk):
         data = {'which_medician':mdc}
         form = ImageMedicianForm(initial=data)
         return render(request, 'create.html', {'form':form})
-
+@debugger
 def all_image_medician(request, pk):
-    obj = get_object_or_404(Medician, pk=pk)
-    imgs = ImageMedician.objects.filter(which_medician=obj)
+    imgs = ImageMedician.objects.select_related('which_medician').filter(which_medician__pk=pk)
     return render(request, 'show_image.html', {'imgsM':imgs})
 
 def remove_image_medician(request, pk):
@@ -512,8 +511,7 @@ def remove_image_medician(request, pk):
 
 
 def labratores(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
-    all_labratore = labratore.objects.filter(which_farm=farm).order_by('-date')
+    all_labratore = labratore.objects.select_related('which_farm').filter(which_farm__pk=pk).order_by('-date')
 
     context = {
         'all_labratore':all_labratore
@@ -585,8 +583,7 @@ def add_image_to_labratore(request, pk):
         return render(request, 'create.html', {'form':form})
 
 def all_image_labratore(request, pk):
-    obj = get_object_or_404(labratore, pk=pk)
-    imgs = ImageLabratore.objects.filter(labratore = obj)
+    imgs = ImageLabratore.objects.select_related('labratore').filter(labratore__pk = pk)
     return render(request, 'show_image.html', {'imgsA':imgs})
 
 def remove_image_labratore(request, pk):
@@ -599,10 +596,9 @@ def remove_image_labratore(request, pk):
     pk = img.labratore.pk
     img.delete()
     return redirect('farms:all_image_labratore', pk)
-
+@debugger
 def manufacturing_farm(request, pk):
-    obj = get_object_or_404(Farms, pk=pk)
-    manu = obj.farm_manufacturing.all().order_by('date')
+    manu = Manufacturing.objects.select_related('which_farm').filter(which_farm__pk=pk).order_by('date')
 
     num_brokn = [i.Broken for i in manu]
     num_normal = [i.normal for i in manu]
@@ -621,7 +617,6 @@ def manufacturing_farm(request, pk):
         'num_normal':num_normal,
         'num_egg':num_egg,
     }
-    print(context)
     return render(request, 'manufacturing_farm.html', context)
 
 def create_manufacturing(request, pk):
@@ -673,9 +668,7 @@ def edit_manufacturing(request, pk):
         return render(request, 'create.html',{'form':form})
 
 def losses(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
-
-    all_losses = Losses.objects.filter(which_farm=farm)
+    all_losses = Losses.objects.select_related('which_farm').filter(which_farm__pk=pk)
     
     sum_hit_back = all_losses.aggregate(Sum('hit_back'))
     sum_sickness = all_losses.aggregate(Sum('sickness'))
@@ -744,9 +737,8 @@ def edit_losse(request, pk):
         return render(request, 'create.html', {'form':form})
 
 def incaomes(request, pk):
-    farm = get_object_or_404(Farms, pk=pk)
 
-    incaomes = Incaome.objects.filter(which_farm =farm).order_by('date')
+    incaomes = Incaome.objects.select_related('which_farm').filter(which_farm__pk =pk).order_by('date')
     price_cood = incaomes.filter(sell='F').aggregate(Sum('price'))
     price_egg = incaomes.filter(sell='E').aggregate(Sum('price'))
 
@@ -755,7 +747,6 @@ def incaomes(request, pk):
         'price_cood':price_cood['price__sum'] or 0,
         'price_egg':price_egg['price__sum'] or 0,
     }
-    print(context)
     return render(request, 'incaome.html', context)
 
 def create_incaome(request, pk):

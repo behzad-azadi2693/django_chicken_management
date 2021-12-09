@@ -182,6 +182,7 @@
                           <p class="card-text">{{ profile.age_into_farm }}</p> <hr>
                           زمان ورود به مزرعه
                           <p class="card-text">{{ profile.time_into_farm }}</p> <hr>
+                          {{  profile.which_farm.active }}
                         {% if profile.which_farm.active %}
                           <a href="{% url 'farms:edit_profilechicken' profile.pk %}" > 
                             <i class="material-icons" style="font-size:60px;color:aqua;">drive_file_rename_outline</i> ویرایش محصول

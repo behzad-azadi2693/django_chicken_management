@@ -80,13 +80,16 @@ https://templatemo.com/tm-552-video-catalog
             <div class="row">
                 {% if imgsM %}
                     {% for img in imgsM %}
+
                         <div class="col-md-4">
                           <div class="thumbnail">
                             <a href="{{ img.image.url }}">
                               <img src="{{ img.image.url }}" alt="Lights" style="width:100%">
                               <div class="caption">
                                 <a href="{{ img.image.url }}" download=""><i class="material-icons" style="font-size:60px;color:green;">file_download</i></a>
+                                {% if img.which_medician.which_farm.active %}
                                 <a href="{% url 'farms:remove_image_medician' img.pk %}"><i class="material-icons" style="font-size:60px;color:red;">delete</i></a>
+                                {% endif %}
                               </div>
                             </a>
                           </div>
@@ -100,8 +103,10 @@ https://templatemo.com/tm-552-video-catalog
                               <img src="{{ img.image.url }}" alt="Lights" style="width:100%">
                               <div class="caption">
                                 <a href="{{ img.image.url }}" download=""><i class="material-icons" style="font-size:60px;color:green;">file_download</i></a>
+                                {% if img.labratore.which_farm.active %}
                                 <a href="{% url 'farms:remove_image_labratore' img.pk %}"><i class="material-icons" style="font-size:60px;color:red;">delete</i></a>
-                              </div>
+                                {% endif %}
+                            </div>
                             </a>
                           </div>
                         </div>

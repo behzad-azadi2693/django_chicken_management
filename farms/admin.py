@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Farms, FarmManage, ProfileChickens, Vaccination, Medician, ImageMedician, Losses, labratore, ImageLabratore
+from .models import Farms, Function,FarmManage, ProfileChickens, Vaccination, Medician, ImageMedician, Losses, labratore, ImageLabratore
 
 
 
@@ -14,3 +14,4 @@ admin.site.register(ImageMedician)
 admin.site.register(labratore)
 admin.site.register(Losses)
 admin.site.register(ImageLabratore)
+admin.site.register(Function)
