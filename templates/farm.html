@@ -159,13 +159,14 @@
                                       <p class="media-body pt-3 tm-testimonial-text text-justify">
                                       میزان فروش مزرعه در تاریخ معین فروش تخم مرغ یا کود
                                       <br>
-                                        <a href=""><i class="material-icons" style="font-size:60px;color:aquamarine;">visibility</i></a>
+                                        <a href="{% url 'farms:incaomes' farm.pk %}"><i class="material-icons" style="font-size:60px;color:aquamarine;">visibility</i></a>
                                     </p>
                                     </div>                  
                                 </div>
 		                    </div>
 				        </div>
                     </div>
+                    {% if farm.active %}
                     <div class="col-md-2 mt-5 col-sm-12 bg-light"> 
                         <ul style="direction: rtl; float: right;">
                             <li  style="list-style-type:none;">
@@ -175,7 +176,7 @@
                                 <a style="float: right;" href="{% url 'farms:create_profilechicken' farm.pk %}"><i class="material-icons" style="font-size:50px;color:burlywood;">set_meal</i>محصول</a>
                             </li>
                             <li  style="list-style-type: none;">
-                                <a style="float: right;" href="{% url 'farms:create_manufacturing' farm.pk %}"><i class="material-icons" style="font-size:50px;color:blueviolet;">poll</i>تولیدی</a>
+                                <a style="float: right;" href="{% url 'farms:create_manufacturing' farm.pk %}"><i class="material-icons" style="font-size:50px;color:blueviolet;">poll</i>تولید</a>
                             </li>
                             <li  style="list-style-type: none;">
                                 <a style="float: right;" href="{% url 'farms:create_vaccination' farm.pk %}"> <i class="material-icons" style="font-size:50px;color:greenyellow;">medical_services</i>واکسن</a>
@@ -187,13 +188,13 @@
                                 <a style="float: right;" href="{% url 'farms:create_labratore' farm.pk %}"> <i class="material-icons" style="font-size:50px;color:blue;">local_pharmacy</i>آزمایش</a>
                             </li>
                             <li style="list-style-type: none;">
-                                <a style="float: right;" href="{% url 'farms:create_losse' farm.pk %}"> <i class="material-icons" style="font-size:50px;color:red;">heart_broken</i>تلفاتی</a>
+                                <a style="float: right;" href="{% url 'farms:create_losse' farm.pk %}"> <i class="material-icons" style="font-size:50px;color:red;">heart_broken</i>تلفات</a>
                             </li>
                             <li style="list-style-type: none;">
                                 <a style="float: right;" href="{% url 'farms:create_manage' farm.pk %}"> <i class="material-icons" style="font-size:50px;color:aqua;">badge</i>مدیریت</a>
                             </li>
                             <li style="list-style-type: none;">
-                                <a style="float: right;" href="{% url 'farms:create_incaome' farm.pk %}"> <i class="material-icons" style="font-size:50px;color:rgb(7, 102, 26);">shopping_cart</i>فروشی</a>
+                                <a style="float: right;" href="{% url 'farms:create_incaome' farm.pk %}"> <i class="material-icons" style="font-size:50px;color:rgb(7, 102, 26);">shopping_cart</i>فروش</a>
                             </li>
                             <li style="list-style-type: none;">
                                 <a style="float: right;" href="{% url 'farms:create_function' farm.pk %}"> <i class="material-icons" style="font-size:50px;color:rgb(22, 89, 189);">psychology</i>عملکرد</a>
@@ -206,6 +207,7 @@
                             </li>
                         </ul>
                     </div>
+                    {% endif %}
                 </div>
 			</div>
 		</main>

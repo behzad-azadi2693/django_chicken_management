@@ -108,16 +108,29 @@ https://templatemo.com/tm-552-video-catalog
                         {% endfor %}
                     </div>
                     <!-- Catalog Paging Buttons -->
-                    <div>
+                {% if farms.has_other_pages %}
+                    <div class='row'>
                         <ul class="nav tm-paging-links">
-                            <li class="nav-item"><a href="#" class="nav-link tm-paging-link"><</a></li>
-                            <li class="nav-item active"><a href="#" class="nav-link tm-paging-link">1</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link tm-paging-link">2</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link tm-paging-link">3</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link tm-paging-link">4</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link tm-paging-link">></a></li>
+                            {% if farms.has_previous %}
+                            <li class="nav-item"><a href="?page={{ farms.previous_page_number }}" class="nav-link tm-paging-link"><</a></li>
+                            {% else %}
+                            <li class="nav-item"><a class="nav-link tm-paging-link"><</a></li>
+                            {% endif %}
+                            {% for i in farms.paginator.page_range %}
+                                {% if farms.number == i %}
+                                    <li class="nav-item active"><a href="#" class="nav-link tm-paging-link">{{i}}</a></li>
+                                {% else %}
+                                    <li class="nav-item"><a href="?page={{ i }}" class="nav-link tm-paging-link">{{i}}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                            {% if farms.has_next %}
+                                <li class="nav-item"><a href="?page={{ farms.next_page_number }}" class="nav-link tm-paging-link">></a></li>
+                            {% else %}
+                            <li class="nav-item"><a class="nav-link tm-paging-link">></a></li>
+                            {% endif %}
                         </ul>
                     </div>
+                {% endif %}
                 </main>
                 <!-- Subscribe form and footer links -->
                 <div class="row mt-5 pt-3">

@@ -12,24 +12,34 @@
 		<main>
 
         {% if losse %}
-        <div class='row'>
-            <div class="col-12 m-4">
-                <div class="tm-bg-gray  p-5" style='direction:rtl; float:right'>
-                    <h3 class="tm-text-primary text-center mb-3">اطلاعات</h3>
-                    تاریخ بازدید:
-                    <a class="">{{ losse.date|to_jalali:'%Y/%m/%d' }}</a> <hr> 
-                    <a class="text-info" href="{% url 'farms:edit_losse' losse.pk %}"> 
-                        <i class="material-icons" style="font-size:60px;color:aqua;">drive_file_rename_outline</i> ویرایش
-                    </a> 
+            <div class='row'>
+                <div class="col-md-5 col-sm-5 mt-3">
+                    <canvas id="myChart" width="100" height="50"></canvas>
+                </div>
+                <div class="col-md-5 col-sm-5 mt-3">
+                    <canvas id="myChartes" width="100" height="100"></canvas>
                 </div>
             </div>
+            <div class='row'>
+                <div class="col-12 m-4">
+                    <div class="tm-bg-gray  p-5" style='direction:rtl; float:right'>
+                        <h3 class="tm-text-primary text-center mb-3">اطلاعات</h3>
+                        تاریخ بازدید:
+                        <a class="">{{ losse.date|to_jalali:'%Y/%m/%d' }}</a> <hr>
+                    {% if losse.which_farm.active %} 
+                        <a class="text-info" href="{% url 'farms:edit_losse' losse.pk %}"> 
+                            <i class="material-icons" style="font-size:60px;color:aqua;">drive_file_rename_outline</i> ویرایش
+                        </a>
+                    {% endif %}
+                    </div>
+                </div>
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12 mb-4">
                 <div class="p-5 tm-bg-gray h-100">
                     <h3 class="tm-text-primary text-center mb-4"> بیماری</h3>
                     <p style="direction:rtl;text-align:justify; float:right; ">{{ losse.sicknes_description }}</p>
                 </div>                        
             </div>
-        
+           
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12 mb-4">
                 <div class="p-5 tm-bg-gray h-100">
                     <h3 class="tm-text-primary text-center mb-4"> خفگی </h3>
@@ -49,9 +59,7 @@
                 </div>                        
             </div>
         </div>
-        <div class="col-12 mb-5">
-            <canvas id="myChart" width="400" height="400"></canvas>
-        </div>
+       
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.2/chart.min.js"></script>
 
@@ -62,7 +70,29 @@
                 data: {
                     labels: ['بیماری', ' خفگی', 'پس زده', 'فیزیکی'],
                     datasets: [{
-                        label: 'چارت تفکیک شده تولیدی کل مزرعه',
+                        label: 'چارت تفکیک شده تلفات کل مزرعه',
+                        data: [{{losse.sickness}},{{losse.suffocation}},{{losse.hit_back}},{{losse.physics}}],
+                        backgroundColor: [
+                            'rgba(255, 99, 132)',
+                            'rgba(54, 162, 235)',
+                            'rgba(255, 206, 86)',
+                            'rgb(201, 203, 207)',
+    
+                        ],
+                        
+                        hoverOffset: 20
+
+                    }]
+                },
+                
+            });
+            const ctx_2 = document.getElementById('myChartes').getContext('2d');
+            const myChartes = new Chart(ctx_2, {
+                type: 'bar',
+                data: {
+                    labels: ['بیماری', ' خفگی', 'پس زده', 'فیزیکی'],
+                    datasets: [{
+                        label: 'چارت تفکیک شده تلفات کل مزرعه',
                         data: [{{losse.sickness}},{{losse.suffocation}},{{losse.hit_back}},{{losse.physics}}],
                         backgroundColor: [
                             'rgba(255, 99, 132)',
@@ -90,6 +120,9 @@
                             <div class="col-12 mb-5">
                                 <canvas id="myChart" width="400" height="400"></canvas>
                             </div>
+                            <div class="col-12 mb-5">
+                                <canvas id="myChartes" width="400" height="400"></canvas>
+                            </div>
                         </div>  
                     </div>                                      			
 				</div>
@@ -105,7 +138,7 @@
                     <th scope="col"> خفگی</th>
                     <th scope="col"> فیزیکی</th>
                     <th scope="col">تاریخ</th>
-                    <th scope="col">ویرایش</th>
+                    <th scope="col">نمایش</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -123,7 +156,6 @@
                             <i class="material-icons" style="font-size:30px;color:aquamarine;">visibility</i> نمایش
                         </a> 
                     </td>
-
                   </tr>
                  {% endfor %} 
                 </tbody>
@@ -135,6 +167,25 @@
             const ctx = document.getElementById('myChart').getContext('2d');
             const myChart = new Chart(ctx, {
                 type: 'polarArea',
+                data: {
+                    labels: ['بیماری', ' خفگی', 'پس زده', 'فیزیکی'],
+                    datasets: [{
+                        label: 'چارت تفکیک شده تولیدی کل مزرعه',
+                        data: [{{sickness}},{{suffocation}},{{hit_back}},{{physics}}],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(255, 206, 86, 0.5)',
+                            'rgb(201, 203, 207, 0.5)',
+    
+                        ],
+
+                    }]
+                },
+            });
+            const ctx_2 = document.getElementById('myChartes').getContext('2d');
+            const myChartes = new Chart(ctx_2, {
+                type: 'bar',
                 data: {
                     labels: ['بیماری', ' خفگی', 'پس زده', 'فیزیکی'],
                     datasets: [{

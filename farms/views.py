@@ -1,7 +1,6 @@
 from django.contrib import messages
-from django.forms import fields, formset_factory, modelformset_factory
-from django.forms.formsets import ManagementForm
-from django.forms.models import modelformset_factory
+from django.core.paginator import Paginator
+
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import (
             FarmManage, Farms, Function, ImageLabratore, ImageMedician, Incaome, Losses, MakBery, ProfileChickens, 
@@ -16,8 +15,10 @@ from django.db.models import Sum
 # Create your views here.
 
 def farms(request):
-    farms = Farms.objects.all().only('pk','image','name_type','active','date_start').order_by('-active','-id')
-    
+    farmses = Farms.objects.all().only('pk','image','name_type','active','date_start').order_by('-active','-id')
+    paginator = Paginator(farmses, 24) 
+    page = request.GET.get('page')
+    farms = paginator.get_page(page)
     context = {
         'farms':farms
     }
@@ -601,7 +602,11 @@ def remove_image_labratore(request, pk):
 
 def manufacturing_farm(request, pk):
     obj = get_object_or_404(Farms, pk=pk)
-    manu = obj.farm_manufacturing.all()
+    manu = obj.farm_manufacturing.all().order_by('date')
+
+    num_brokn = [i.Broken for i in manu]
+    num_normal = [i.normal for i in manu]
+    num_egg = [i.eggـyolk for i in manu]
 
     sum_broken = manu.aggregate(Sum('Broken'))
     sum_normal = manu.aggregate(Sum('normal'))
@@ -611,9 +616,12 @@ def manufacturing_farm(request, pk):
         'broken' :sum_broken['Broken__sum'],
         'normal' :sum_normal['normal__sum'],
         'eggyolk':sum_eggyolk['eggـyolk__sum'],
-        'manu': manu
+        'manu': manu,
+        'num_broken':num_brokn,
+        'num_normal':num_normal,
+        'num_egg':num_egg,
     }
-
+    print(context)
     return render(request, 'manufacturing_farm.html', context)
 
 def create_manufacturing(request, pk):
@@ -681,7 +689,6 @@ def losses(request, pk):
         'physics':sum_physics['physics__sum'],
         'losses':all_losses,
     }
-    print(context)
 
     return render(request, 'losse.html', context)
 
@@ -736,28 +743,20 @@ def edit_losse(request, pk):
         form = LossesForm(instance=obj)
         return render(request, 'create.html', {'form':form})
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 def incaomes(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
 
-    incaomes = Incaome.objects.filter(which_farm =farm)
+    incaomes = Incaome.objects.filter(which_farm =farm).order_by('date')
+    price_cood = incaomes.filter(sell='F').aggregate(Sum('price'))
+    price_egg = incaomes.filter(sell='E').aggregate(Sum('price'))
 
     context = {
-        'incaomes':incaomes
+        'incaomes':incaomes,
+        'price_cood':price_cood['price__sum'] or 0,
+        'price_egg':price_egg['price__sum'] or 0,
     }
-    return render(request, 'incaomes.html', context)
+    print(context)
+    return render(request, 'incaome.html', context)
 
 def create_incaome(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
@@ -772,7 +771,7 @@ def create_incaome(request, pk):
         if form.is_valid():
             cd = form.cleaned_data
             form.save()
-            return redirect('farms:incomes', farm.pk)
+            return redirect('farms:incaomes', farm.pk)
         else:
             form = IncaomForm(request.POST)
             return render(request, 'create.html', {'form':form})
@@ -786,7 +785,7 @@ def edit_incaome(request, pk):
 
     if not obj.active:
         messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
-        return redirect('farms:farm', obj.pk)
+        return redirect('farms:incaomes', obj.which_farm.pk)
 
     if request.method == 'POST':
         form = IncaomForm(request.POST, instance=obj)

@@ -63,9 +63,11 @@
                             <a>{{ fun.prduction_weight}} </a> <hr>
                             ضریب تولید
                             <a>{{ fun.production_coefficient }} </a> <hr> 
+                            {% if fun.which_farm.active %}
                             <a class="text-info" href="{% url 'farms:edit_function' fun.pk %}"> 
                                 <i class="material-icons" style="font-size:60px;color:aqua;">drive_file_rename_outline</i> ویرایش
                             </a> 
+                            {% endif %}
                         </div>
                     </div> 
                 {% endfor %}
@@ -78,9 +80,11 @@
                             <a class="">{{ mak.m2j_start}}</a> <hr> 
                             تاریخ پایان:
                             <a class="">{{ mak.m2j_end }}</a> <hr>    
+                            {% if mak.which_farm.active %}
                             <a class="text-info" href="{% url 'farms:edit_make_bery' mak.pk %}"> 
                                 <i class="material-icons" style="font-size:60px;color:aqua;">drive_file_rename_outline</i> ویرایش
                             </a> 
+                            {% endif %}
                         </div>
                     </div>
                     <div class="col-xl-8 col-lg-12  mb-4">
@@ -104,10 +108,11 @@
                                 {% endif %}
                                 <a> سن تجویز: {{ vac.ageـprescription }}</a> <hr>
                                 <a> نوع واکسن: {{ vac.typeـvaccine }}</a> <hr>
-
+                            {% if vac.which_farm.active %}
                             <a class="text-info" href="{% url 'farms:edit_vaccination' vac.pk %}"> 
                                 <i class="material-icons" style="font-size:60px;color:aqua;">drive_file_rename_outline</i> ویرایش
                             </a> 
+                            {% endif %}
                         </div>
                     </div>
                     <div class="col-xl-4 col-lg-6 col-md-6 col-sm-6 col-12 mb-4">
@@ -131,9 +136,11 @@
                             <h3 class="tm-text-primary mb-4">اطلاعات  {{ forloop.counter }}</h3>
                             توضیحات
                             <p>{{ sch.description }}</p> <hr>
+                            {% if sch.which_farm.active %}
                             <a href="{% url 'farms:edit_schedule' sch.pk %}">
                                 <i class="material-icons" style="font-size:60px;color:aqua;">drive_file_rename_outline</i> ویرایش
                             </a>
+                            {% endif %}
                         </div>                        
                     </div>
                 {% endfor %}
@@ -146,9 +153,11 @@
                             <a class="">{{ lab.date|to_jalali:'%Y/%m/%d' }}</a> <hr> 
                             <a class="text-info" href="{% url 'farms:add_image_to_labratore' lab.pk %}"> افزودن عکس های آزمایشات</a> <hr>
                             <a class="text-info" href="{% url 'farms:all_image_labratore' lab.pk%}">مشاهده عکس های آزمایشات</a> <hr>
+                            {% if lab.which_farm.active %}
                             <a class="text-info" href="{% url 'farms:edit_labratore' lab.pk %}"> 
                                 <i class="material-icons" style="font-size:60px;color:aqua;">drive_file_rename_outline</i> ویرایش
-                            </a> 
+                            </a>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="col-xl-9 col-lg-12 col-md-12 col-sm-12 col-12 mb-4">
@@ -173,9 +182,11 @@
                           <p class="card-text">{{ profile.age_into_farm }}</p> <hr>
                           زمان ورود به مزرعه
                           <p class="card-text">{{ profile.time_into_farm }}</p> <hr>
+                        {% if profile.which_farm.active %}
                           <a href="{% url 'farms:edit_profilechicken' profile.pk %}" > 
                             <i class="material-icons" style="font-size:60px;color:aqua;">drive_file_rename_outline</i> ویرایش محصول
                           </a>
+                        {% endif %}
                         </div>
                       </div>
                 </div>
