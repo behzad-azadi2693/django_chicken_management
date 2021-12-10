@@ -29,7 +29,7 @@ def debugger(func):
         return value
     return wrapper
 
-@debugger
+
 def farms(request):
     farmses = Farms.objects.only('pk','image','name_type','active','date_start').order_by('-active','-id')
     paginator = Paginator(farmses, 24) 
@@ -41,7 +41,7 @@ def farms(request):
 
     return render(request, 'farms.html', context)
 
-@debugger
+
 def farm(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
     manage = farm.farms_farmmanage.all()
@@ -53,7 +53,7 @@ def farm(request, pk):
     
     return render(request, 'farm.html', context)
 
-@debugger
+
 def create_farm(request):
     if request.method == 'POST':
         form = FarmForm(request.POST, request.FILES)
@@ -71,7 +71,7 @@ def create_farm(request):
         form = FarmForm()
         return render(request, 'create.html',{'form':form})
 
-@debugger
+
 def edit_farm(request, pk):
     farm = get_object_or_404(Farms, pk=pk)
 
@@ -95,7 +95,7 @@ def edit_farm(request, pk):
         form = FarmForm(instance=farm)
         return render(request, 'create.html',{'form':form})
 
-@debugger
+
 def profilechicken(request, pk):
     profile = ProfileChickens.objects.select_related('which_farm').filter(which_farm__pk=pk).first()
 
@@ -105,7 +105,7 @@ def profilechicken(request, pk):
 
     return render(request, 'medicians.html', {'profile':profile})
 
-@debugger
+
 def create_profilechicken(request, pk):
     try:
         ProfileChickens.objects.get(which_farm__pk=pk)
@@ -137,7 +137,7 @@ def create_profilechicken(request, pk):
             form = ProfilechickenForm(initial=data)
             return render(request, 'create.html',{'form':form})
     
-@debugger
+
 def edit_profilechicken(request, pk):
     farm = get_object_or_404(ProfileChickens, pk=pk)
     
@@ -163,7 +163,7 @@ def edit_profilechicken(request, pk):
         form = ProfilechickenForm(instance=farm)
         return render(request, 'create.html',{'form':form})   
 
-@debugger
+
 def vaccinations(request, pk):
     queries = Vaccination.objects.select_related('which_farm').filter(which_farm__pk=pk)
 
@@ -173,7 +173,7 @@ def vaccinations(request, pk):
 
     return render(request, 'medicians.html', context)
 
-@debugger
+
 def create_vaccination(request, pk):
     obj = get_object_or_404(Farms, pk=pk)
 
@@ -224,7 +224,7 @@ def edit_vaccination(request, pk):
         return render(request, 'create.html',{'form':form})
 
 
-@debugger
+
 def functions(request, pk):
     functions = Function.objects.select_related('which_farm').filter(which_farm__pk=pk)
     context = {
@@ -276,7 +276,6 @@ def edit_function(request, pk):
     else:
         form = FunctionForm(instance=farm)
         return render(request, 'create.html', {'form':form})
-
 
 def schedules(request, pk):
     schedules = Schedule.objects.select_related('which_farm').filter(which_farm__pk=pk)
@@ -363,20 +362,20 @@ def create_manage(request, pk):
 
     if request.method == 'POST':
         formset = manageformset(data=request.POST)
-        formset.save()
+        print(formset)
+        if formset.is_valid():
+            managers = [FarmManage(**field_dict, which_farm=farm) for field_dict in formset.cleaned_data]
+            FarmManage.objects.bulk_create(managers)
         return redirect('farms:farm', pk)
 
     else:
         
-        form = manageformset(queryset=FarmManage.objects.none(), initial=[
-            {'which_farm':farm},
-            {'which_farm':farm},
-            {'which_farm':farm},
-            ])
+        form = manageformset(queryset=FarmManage.objects.none())
         context = {
             'formset':form
         }
         return render(request, 'create.html', context)
+
 
 def make_bery(request, pk):
     all_mak_bery = MakBery.objects.select_related('which_farm').filter(which_farm__pk=pk)
@@ -422,7 +421,7 @@ def edit_make_bery(request, pk):
     else:
         form = MakeBeryForm(instance=obj)
         return render(request, 'create.html', {'form':form})
-@debugger
+
 def medicians(request, pk):
     all_medician = Medician.objects.select_related('which_farm').filter(which_farm__pk=pk).order_by('-date')
     context = {
@@ -474,7 +473,7 @@ def edit_medician(request, pk):
 
 
 def add_image_to_medician(request, pk):
-    mdc = get_object_or_404(Medician, pk=pk)
+    mdc = get_object_or_404(Medician.objects.select_related(), pk=pk)
 
     if not mdc.which_farm.active:
         messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
@@ -483,8 +482,8 @@ def add_image_to_medician(request, pk):
     if request.method == 'POST':
         form = ImageMedicianForm(request.POST, request.FILES)
         if form.is_valid():
-            for file in form:
-                form.save()
+            files = [ImageMedician(image=i,which_medician=mdc ) for i in request.FILES.getlist('image')]
+            ImageMedician.objects.bulk_create(files)
             pk = mdc.which_farm.pk
             return redirect('farms:medicians', pk)
         else:
@@ -493,9 +492,9 @@ def add_image_to_medician(request, pk):
         data = {'which_medician':mdc}
         form = ImageMedicianForm(initial=data)
         return render(request, 'create.html', {'form':form})
-@debugger
+
 def all_image_medician(request, pk):
-    imgs = ImageMedician.objects.select_related('which_medician').filter(which_medician__pk=pk)
+    imgs = ImageMedician.objects.select_related().filter(which_medician__pk=pk)
     return render(request, 'show_image.html', {'imgsM':imgs})
 
 def remove_image_medician(request, pk):
@@ -562,7 +561,7 @@ def edit_labratore(request, pk):
 
 
 def add_image_to_labratore(request, pk):
-    lab = get_object_or_404(labratore, pk=pk)
+    lab = get_object_or_404(labratore.objects.select_related(), pk=pk)
 
     if not lab.which_farm.active:
         messages.error(request, 'این مزرعه فعال نمی باشد', 'error')
@@ -571,8 +570,8 @@ def add_image_to_labratore(request, pk):
     if request.method == 'POST':
         form = ImageLabratoreForm(request.POST, request.FILES)
         if form.is_valid():
-            for image in request.FILES.getlist('image'):
-                ImageLabratore.objects.create(image=image, labratore=lab)
+            files = [labratore(image=image, labratore=lab) for image in request.FILES.getlist('image')]
+            ImageLabratore.objects.bulk_create(files)
             pk = lab.which_farm.pk
             return redirect('farms:labratores', pk)
         else:
@@ -582,8 +581,9 @@ def add_image_to_labratore(request, pk):
         form = ImageLabratoreForm(initial=data)
         return render(request, 'create.html', {'form':form})
 
+
 def all_image_labratore(request, pk):
-    imgs = ImageLabratore.objects.select_related('labratore').filter(labratore__pk = pk)
+    imgs = ImageLabratore.objects.select_related().filter(labratore__pk = pk)
     return render(request, 'show_image.html', {'imgsA':imgs})
 
 def remove_image_labratore(request, pk):
@@ -596,7 +596,7 @@ def remove_image_labratore(request, pk):
     pk = img.labratore.pk
     img.delete()
     return redirect('farms:all_image_labratore', pk)
-@debugger
+
 def manufacturing_farm(request, pk):
     manu = Manufacturing.objects.select_related('which_farm').filter(which_farm__pk=pk).order_by('date')
 
@@ -604,14 +604,13 @@ def manufacturing_farm(request, pk):
     num_normal = [i.normal for i in manu]
     num_egg = [i.eggـyolk for i in manu]
 
-    sum_broken = manu.aggregate(Sum('Broken'))
-    sum_normal = manu.aggregate(Sum('normal'))
-    sum_eggyolk = manu.aggregate(Sum('eggـyolk'))
+    sum_broken = manu.aggregate(broken=Sum('Broken'),norm=Sum('normal'),egg=Sum('eggـyolk'))
+
 
     context = {
-        'broken' :sum_broken['Broken__sum'],
-        'normal' :sum_normal['normal__sum'],
-        'eggyolk':sum_eggyolk['eggـyolk__sum'],
+        'broken' :sum_broken['broken'],
+        'normal' :sum_broken['norm'],
+        'eggyolk':sum_broken['egg'],
         'manu': manu,
         'num_broken':num_brokn,
         'num_normal':num_normal,
@@ -670,16 +669,13 @@ def edit_manufacturing(request, pk):
 def losses(request, pk):
     all_losses = Losses.objects.select_related('which_farm').filter(which_farm__pk=pk)
     
-    sum_hit_back = all_losses.aggregate(Sum('hit_back'))
-    sum_sickness = all_losses.aggregate(Sum('sickness'))
-    sum_suffocation = all_losses.aggregate(Sum('suffocation'))
-    sum_physics = all_losses.aggregate(Sum('physics'))
-
+    sum = all_losses.aggregate(hit=Sum('hit_back'),sick=Sum('sickness'),suff=Sum('suffocation'),phys=Sum('physics'))
+ 
     context = {
-        'hit_back' :sum_hit_back['hit_back__sum'],
-        'sickness' :sum_sickness['sickness__sum'],
-        'suffocation':sum_suffocation['suffocation__sum'],
-        'physics':sum_physics['physics__sum'],
+        'hit_back' :sum['hit'],
+        'sickness' :sum['sick'],
+        'suffocation':sum['suff'],
+        'physics':sum['phys'],
         'losses':all_losses,
     }
 

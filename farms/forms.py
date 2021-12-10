@@ -147,11 +147,10 @@ class ManagerForm(forms.ModelForm):
             self.fields[field].widget.attrs['style'] = 'direction:rtl'
             self.fields['phone_number'].widget.attrs['placeholder'] = '09120000000'
             self.fields['phone_number'].widget.attrs['style'] = 'direction:ltr'
-            self.fields['which_farm'].widget.attrs['readonly'] = True
 
     class Meta:
         model = FarmManage
-        fields = '__all__'
+        exclude = ('which_farm',)
 
 class ScheduleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -200,19 +199,20 @@ class MedicianForm(forms.ModelForm):
 
 
 class ImageMedicianForm(forms.ModelForm):
+
     def __init__(self, *args, **kwargs):
         super(ImageMedicianForm, self).__init__(*args, **kwargs)
 
         for field in self.fields:
             self.fields[field].widget.attrs['class'] = 'form-control'
             self.fields[field].widget.attrs['style'] = 'direction:rtl'
-            self.fields['which_medician'].widget.attrs['readonly'] = True
+            #self.fields['which_medician'].widget.attrs['readonly'] = True
             self.fields['image'].widget.attrs['multiple'] = True
             self.fields[field].error_messages = messages
 
     class Meta:
         model = ImageMedician
-        fields = '__all__'
+        fields = ('image',)
 
 
 
@@ -239,10 +239,10 @@ class ImageLabratoreForm(forms.ModelForm):
         for field in self.fields:
             self.fields[field].widget.attrs['class'] = 'form-control'
             self.fields[field].widget.attrs['style'] = 'direction:rtl'
-            self.fields['labratore'].widget.attrs['readonly'] = True
+            #self.fields['labratore'].widget.attrs['readonly'] = True
             self.fields['image'].widget.attrs['multiple'] = True
             self.fields[field].error_messages = messages
 
     class Meta:
         model = ImageLabratore
-        fields = '__all__'
+        fields = ('image',)
