@@ -176,7 +176,7 @@ class labratore(models.Model):
         return f'مزرعه:{self.which_farm}-تاریخ:{self.date}'
 
 def path_save_image_labratore(instance, filename):
-    name = os.path.join('labratore', instance.labratore.which_famr.name,str(instance.labratore.date), filename)
+    name = os.path.join('labratore', instance.labratore.which_famr.name,str(instance.labratore.m2j()), filename)
     return name
 
 class ImageLabratore(models.Model):
@@ -209,7 +209,7 @@ class Medician(models.Model):
 
 
 def path_save_image_medician(instance, filename):
-    name = os.path.join('medician', instance.which_medician.which_farm.name_type,str(instance.which_medician.date), filename)
+    name = os.path.join('medician', instance.which_medician.which_farm.name_type,str(instance.which_medician.m2j()), filename)
     return name 
     
 class ImageMedician(models.Model):
