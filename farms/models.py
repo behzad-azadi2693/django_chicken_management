@@ -176,8 +176,8 @@ class labratore(models.Model):
         return f'مزرعه:{self.which_farm}-تاریخ:{self.date}'
 
 def path_save_image_labratore(instance, filename):
-    name = os.path.join('labratore', instance.labratore.which_famr.name,str(instance.labratore.m2j()), filename)
-    return name
+    path_save = os.path.join('labratore', instance.labratore.which_famr.name,str(instance.labratore.m2j()), filename)
+    return path_save
 
 class ImageLabratore(models.Model):
     labratore = models.ForeignKey(labratore, on_delete=models.CASCADE, related_name='image_labratore', verbose_name='انتخاب آزمایشگاه')
@@ -209,8 +209,8 @@ class Medician(models.Model):
 
 
 def path_save_image_medician(instance, filename):
-    name = os.path.join('medician', instance.which_medician.which_farm.name_type,str(instance.which_medician.m2j()), filename)
-    return name 
+    path_save = os.path.join('medician', instance.which_medician.which_farm.name_type,str(instance.which_medician.m2j()), filename)
+    return path_save 
     
 class ImageMedician(models.Model):
     which_medician = models.ForeignKey(Medician, on_delete=models.CASCADE, related_name='image_medician', verbose_name='انتحاب بازدید بهداشتی')
