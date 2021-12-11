@@ -1,4 +1,5 @@
 from django.db import models
+import os
 from django.core.validators import RegexValidator
 from jalali_date import date2jalali
 # Create your models here.
@@ -174,9 +175,13 @@ class labratore(models.Model):
     def __str__(self):
         return f'مزرعه:{self.which_farm}-تاریخ:{self.date}'
 
+def path_save_image_labratore(instance, filename):
+    name = os.path.join('labratore', instance.labratore.which_famr.name,str(instance.labratore.date), filename)
+    return name
+
 class ImageLabratore(models.Model):
     labratore = models.ForeignKey(labratore, on_delete=models.CASCADE, related_name='image_labratore', verbose_name='انتخاب آزمایشگاه')
-    image = models.ImageField(upload_to='media', verbose_name='تصویر آزمایشگاه')
+    image = models.ImageField(upload_to=path_save_image_labratore, verbose_name='تصویر آزمایشگاه')
 
     class Meta:
         verbose_name = 'تصاویر آزمایشگاه'
@@ -184,7 +189,6 @@ class ImageLabratore(models.Model):
 
     def __str__(self):
         return f'{self.labratore}'
-
 
 class Medician(models.Model):
     which_farm = models.ForeignKey(Farms, on_delete=models.CASCADE, related_name='medician_farm', verbose_name='انتخاب مزرعه')
@@ -203,9 +207,14 @@ class Medician(models.Model):
     def __str__(self):
         return f'مزرعه:{self.which_farm}-تاریخ:{self.date}'
 
+
+def path_save_image_medician(instance, filename):
+    name = os.path.join('medician', instance.which_medician.which_farm.name_type,str(instance.which_medician.date), filename)
+    return name 
+    
 class ImageMedician(models.Model):
     which_medician = models.ForeignKey(Medician, on_delete=models.CASCADE, related_name='image_medician', verbose_name='انتحاب بازدید بهداشتی')
-    image = models.ImageField(verbose_name='تصویر', upload_to='media')
+    image = models.ImageField(verbose_name='تصویر', upload_to=path_save_image_medician)
 
     class Meta:
         verbose_name = 'بهداشت و سلامت تصاویر'
