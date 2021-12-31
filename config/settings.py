@@ -110,7 +110,7 @@ if DEBUG:
         }
     }
 else:
-    ALLOWED_HOSTS = ENV('ALLOWED_HOSTS')
+    ALLOWED_HOSTS = list(ENV('ALLOWED_HOSTS'))
 
     DATABASES = {
         'default':{
